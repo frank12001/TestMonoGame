@@ -30,6 +30,7 @@ namespace ConsoleApp1
         Vector3 cameraPosition = new Vector3(15, 10, 10);
 
         Robot robot;
+        Box Box1;
 
         Camera camera;
 
@@ -74,7 +75,6 @@ namespace ConsoleApp1
         }
         protected override void Initialize()
         {
-
             Shape shape = new BoxShape(JVector.One);
             RigidBody body = new RigidBody(shape) { Tag = "body1" };
             body.Position = JVector.Up * 2;
@@ -87,7 +87,7 @@ namespace ConsoleApp1
             floorVerts[2].Position = new Vector3(20, -20, 0);
             floorVerts[3].Position = floorVerts[1].Position;
             floorVerts[4].Position = new Vector3(20, 20, 0);
-            floorVerts[5].Position = floorVerts[2].Position;
+            floorVerts[5].Position = floorVerts[2].Position;            
 
             int repetitions = 20;
 
@@ -101,9 +101,10 @@ namespace ConsoleApp1
 
             robot = new Robot();
             robot.Initialize(Content);
+            Box1 = new Box();
+            Box1.Initialize(Content);
 
             effect = new BasicEffect(graphics.GraphicsDevice);
-
             camera = new Camera(graphics.GraphicsDevice);
 
             base.Initialize();
@@ -114,12 +115,8 @@ namespace ConsoleApp1
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             //whiteRectangle = Content.Load<Texture2D>("60789_01");
-
             whiteRectangle = new Texture2D(GraphicsDevice, 1, 1);
             whiteRectangle.SetData(new[] { Color.White });
-
-
-            model_box1 = Content.Load<Model>("box1");
 
             // We aren't using the content pipeline, so we need
             // to access the stream directly:
@@ -143,6 +140,7 @@ namespace ConsoleApp1
 
             robot.Update(gameTime);
             camera.Update(gameTime);
+            Box1.Update(gameTime);
             base.Update(gameTime);
         }
         protected override void Draw(GameTime gameTime)
@@ -150,7 +148,7 @@ namespace ConsoleApp1
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             robot.Draw(camera);
-
+            Box1.Draw(camera,GraphicsDevice);
             //spriteBatch.Begin();
             //spriteBatch.Draw(whiteRectangle, new Rectangle(10, 20, 80, 30), Color.Chocolate);
             //spriteBatch.End();
