@@ -11,7 +11,8 @@ namespace ConsoleApp1
     {
         Model model;
         float speed = 1;
-        Vector3 position=Vector3.Zero;
+        public Vector3 Position { get { return ConvertPosition(position); } set { position = ConvertPosition(value); } }
+        private Vector3 position;
         Vector3 rotation = Vector3.Zero;
         Vector3 scale = Vector3.One;
         public void Initialize(ContentManager contentManager)
@@ -20,11 +21,9 @@ namespace ConsoleApp1
         }
         public void Update(GameTime gameTime)
         {
-            position += Vector3.Backward * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Console.WriteLine(position); 
-            //往下是 y++
-            //往左是 x++
-            //往上是 z++
+            //position += Vector3.Backward * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            //Console.WriteLine(Position); 
+
         }
 
         public void Draw(Camera camera,GraphicsDevice graphicsDevice)
@@ -44,9 +43,16 @@ namespace ConsoleApp1
                     effect.View = camera.ViewMatrix;
                     effect.Projection = camera.ProjectionMatrix;
                 }
-
                 mesh.Draw();
             }
+        }
+        Vector3 ConvertPosition(Vector3 vector)
+        {
+            //往前是 y++
+            //往左是 x++
+            //往上是 z++
+            //將他轉成一般 3D 的座標
+            return new Vector3(vector.X * -1, vector.Z, vector.Y);
         }
         Matrix GetWorldMatrix()
         {
