@@ -14,7 +14,8 @@ namespace ConsoleApp1
             //往左是 x++
             //往上是 z++
             //將他轉成一般 3D 的座標
-            return new Vector3(vector.X, vector.Z, vector.Y);
+            //return new Vector3(vector.X, vector.Z, vector.Y);
+            return new Vector3(vector.X, vector.Y, vector.Z);
         }
 
         public static Matrix ToXNAMatrix(JMatrix matrix)

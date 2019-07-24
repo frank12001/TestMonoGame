@@ -12,7 +12,7 @@ namespace ConsoleApp1
 
         public void Initialize(ContentManager contentManager)
         {
-            model = contentManager.Load<Model>("robot");
+            model = contentManager.Load<Model>("robot");           
         }
         public void Update(GameTime gameTime)
         {
@@ -30,8 +30,8 @@ namespace ConsoleApp1
                     effect.PreferPerPixelLighting = true;
 
                     effect.World = GetWorldMatrix();
-                    effect.View = camera.ViewMatrix;
-                    effect.Projection = camera.ProjectionMatrix;
+                    effect.View = camera.View;
+                    effect.Projection = camera.ViewProjection;
                 }
 
                 mesh.Draw();
@@ -80,10 +80,10 @@ namespace ConsoleApp1
                 circleRadius, 0, heightOffGround);
 
             // this matrix rotates everything around the origin
-            Matrix rotationMatrix = Matrix.CreateRotationZ(angle);
+            Matrix rotationMatrix = Matrix.CreateRotationY(angle);
 
             // We combine the two to have the model move in a circle:
-            Matrix combined = translationMatrix * rotationMatrix;
+            Matrix combined = Matrix.CreateRotationX(-90) * Matrix.CreateTranslation(Vector3.Up*2) * translationMatrix * rotationMatrix;
 
             return combined;
         }

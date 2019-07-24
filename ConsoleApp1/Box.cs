@@ -40,8 +40,8 @@ namespace ConsoleApp1
                     effect.TextureEnabled = true;
 
                     effect.World = GetWorldMatrix();                 
-                    effect.View = camera.ViewMatrix;
-                    effect.Projection = camera.ProjectionMatrix;
+                    effect.View = camera.View;
+                    effect.Projection = camera.ViewProjection;
                 }
                 mesh.Draw();
             }

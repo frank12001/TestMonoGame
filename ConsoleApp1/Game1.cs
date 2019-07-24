@@ -39,13 +39,14 @@ namespace ConsoleApp1
         BasicEffect effect;
 
         Robot robot;       
-        Camera camera;
+        Camera Camera;
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
             collision = new CollisionSystemSAP();
+            collision.CollisionDetected += Collision_CollisionDetected;
             world = new World(collision);
 
             //while (true)
@@ -75,6 +76,15 @@ namespace ConsoleApp1
             //    return body.IsStatic;
             //}
         }
+
+        private void Collision_CollisionDetected(RigidBody body1, RigidBody body2, JVector point1, JVector point2, JVector normal, float penetration)
+        {
+            if ((body1.Tag.ToString() == "body1" || body2.Tag.ToString() == "body1") && !body1.IsStatic && !body2.IsStatic)
+            {
+                Console.WriteLine($"body1 碰撞");
+            }
+        }
+
         protected override void Initialize()
         {
             shape1 = new BoxShape(JVector.One);
@@ -97,7 +107,11 @@ namespace ConsoleApp1
             robot.Initialize(Content);
               
             effect = new BasicEffect(graphics.GraphicsDevice);
-            camera = new Camera(graphics.GraphicsDevice);
+
+            Camera = new Camera(this);
+            Camera.Position = new Vector3(0, 5, 20);
+            Camera.Target = Camera.Position + Vector3.Normalize(new Vector3(0,5, 20));
+            this.Components.Add(Camera);
 
             base.Initialize();
         }
@@ -126,6 +140,14 @@ namespace ConsoleApp1
         }
         protected override void Update(GameTime gameTime)
         {
+            //collision.Detect(body1, body2);            
+            bool result = world.CollisionSystem.Raycast(body2.Position, JVector.Left * 100, (body, normal, fraction) => { return body.Tag != body2.Tag; }
+                , out RigidBody resBody, out JVector hitNormal, out float fraction);
+            if (result)
+            {
+                Console.WriteLine($"Ray Cast!!Body Name: {resBody.Tag}");
+            }
+
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
                 //在 JV 中一個物體太久沒動 IsActive 會設為 false
@@ -135,12 +157,12 @@ namespace ConsoleApp1
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
                 body2.IsActive = true;
-                body2.Position = (JVector.Up * 6) + (JVector.Left * 6);
+                body2.Position = (JVector.Up * 6) + (JVector.Right * 6);
             }
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
                 body2.IsActive = true;
-                body2.Position = (JVector.Up * 6) + (JVector.Right * 6);
+                body2.Position = (JVector.Up * 6) + (JVector.Left * 6);
             }
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
@@ -150,26 +172,26 @@ namespace ConsoleApp1
             //if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             //    Exit();
             world.Step((float)gameTime.ElapsedGameTime.TotalSeconds, false);
-
-            Box1.AddWorldMatrix(Matrix.CreateTranslation(Conversion.ToXNAVector(body1.Position)));
-            Box2.AddWorldMatrix(Matrix.CreateTranslation(Conversion.ToXNAVector(body2.Position)));
-            Box0.AddWorldMatrix(Matrix.CreateTranslation(Conversion.ToXNAVector(body0.Position)));
+                    
+            Box1.AddWorldMatrix(Conversion.ToXNAMatrix(body1.Orientation) * Matrix.CreateTranslation(Conversion.ToXNAVector(body1.Position)));
+            Box2.AddWorldMatrix(Conversion.ToXNAMatrix(body2.Orientation) * Matrix.CreateTranslation(Conversion.ToXNAVector(body2.Position)));
+            Box0.AddWorldMatrix(Conversion.ToXNAMatrix(body0.Orientation) * Matrix.CreateTranslation(Conversion.ToXNAVector(body0.Position)));
 
             robot.Update(gameTime);
-            camera.Update(gameTime);
+            //camera.Update(gameTime);
             base.Update(gameTime);
         }
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            robot.Draw(camera);
+            robot.Draw(Camera);
 
             BasicEffect myBoxEffect = new BasicEffect(GraphicsDevice);
             myBoxEffect.EnableDefaultLighting();
             myBoxEffect.PreferPerPixelLighting = true;
-            myBoxEffect.View = camera.ViewMatrix;
-            myBoxEffect.Projection = camera.ProjectionMatrix;
+            myBoxEffect.View = Camera.View;//camera.ViewMatrix;
+            myBoxEffect.Projection = Camera.ViewProjection;//camera.ProjectionMatrix;
             var texture2D = new Texture2D(GraphicsDevice, 1, 1);
             texture2D.SetData(new[] { Color.White });
             myBoxEffect.Texture = texture2D;

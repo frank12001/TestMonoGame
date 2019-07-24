@@ -8,83 +8,181 @@ using System.Text;
 
 namespace ConsoleApp1
 {
-    public class Camera
+    /// <summary>
+    /// First person camera component for the demos, rotated by mouse.
+    /// </summary>
+    public class Camera : GameComponent
     {
-        // We need this to calculate the aspectRatio
-        // in the ProjectionMatrix property.
-        GraphicsDevice graphicsDevice;
+        private Matrix view;
+        private Matrix projection;
 
-        Vector3 position = new Vector3(0, 20, 10);
+        private Vector3 position = new Vector3(0, 0, 10);
+        private Vector2 angles = Vector2.Zero;
 
-        float angle;
+        private int widthOver2;
+        private int heightOver2;
 
-        public Matrix ViewMatrix
+        private float fieldOfView = Microsoft.Xna.Framework.MathHelper.PiOver4;
+        private float aspectRatio;
+        private float nearPlaneDistance = 0.01f;
+        private float farPlaneDistance = 1000.0f;
+
+        private MouseState prevMouseState = new MouseState();
+
+        /// <summary>
+        /// Initializes new camera component.
+        /// </summary>
+        /// <param name="game">Game to which attach this camera.</param>
+        public Camera(Game game)
+            : base(game)
+        {
+            widthOver2 = game.Window.ClientBounds.Width / 2;
+            heightOver2 = game.Window.ClientBounds.Height / 2;
+            aspectRatio = (float)game.Window.ClientBounds.Width / (float)game.Window.ClientBounds.Height;
+            UpdateProjection();
+            Mouse.SetPosition(widthOver2, heightOver2);
+        }
+
+        /// <summary>
+        /// Gets camera view matrix.
+        /// </summary>
+        public Matrix View { get { return view; } }
+        /// <summary>
+        /// Gets or sets camera projection matrix.
+        /// </summary>
+        public Matrix Projection { get { return projection; } set { projection = value; } }
+        /// <summary>
+        /// Gets camera view matrix multiplied by projection matrix.
+        /// </summary>
+        public Matrix ViewProjection { get { return view * projection; } }
+
+        /// <summary>
+        /// Gets or sets camera position.
+        /// </summary>
+        public Vector3 Position { get { return position; } set { position = value; } }
+
+        /// <summary>
+        /// Gets or sets camera field of view.
+        /// </summary>
+        public float FieldOfView { get { return fieldOfView; } set { fieldOfView = value; UpdateProjection(); } }
+        /// <summary>
+        /// Gets or sets camera aspect ratio.
+        /// </summary>
+        public float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; UpdateProjection(); } }
+        /// <summary>
+        /// Gets or sets camera near plane distance.
+        /// </summary>
+        public float NearPlaneDistance { get { return nearPlaneDistance; } set { nearPlaneDistance = value; UpdateProjection(); } }
+        /// <summary>
+        /// Gets or sets camera far plane distance.
+        /// </summary>
+        public float FarPlaneDistance { get { return farPlaneDistance; } set { farPlaneDistance = value; UpdateProjection(); } }
+
+        /// <summary>
+        /// Gets or sets camera's target.
+        /// </summary>
+        public Vector3 Target
         {
             get
             {
-                var lookAtVector = new Vector3(0, -1, -.5f);
-                // We'll create a rotation matrix using our angle
-                var rotationMatrix = Matrix.CreateRotationZ(angle);
-                // Then we'll modify the vector using this matrix:
-                lookAtVector = Vector3.Transform(lookAtVector, rotationMatrix);
-                lookAtVector += position;
-
-                var upVector = Vector3.UnitZ;
-
-                return Matrix.CreateLookAt(
-                    position, lookAtVector, upVector);
+                Matrix cameraRotation = Matrix.CreateRotationX(angles.X) * Matrix.CreateRotationY(angles.Y);
+                return position + Vector3.Transform(Vector3.Forward, cameraRotation);
             }
-        }
-
-        public Matrix ProjectionMatrix
-        {
-            get
+            set
             {
-                float fieldOfView = MathHelper.PiOver4;
-                float nearClipPlane = 1;
-                float farClipPlane = 200;
-                float aspectRatio = graphicsDevice.Viewport.Width / (float)graphicsDevice.Viewport.Height;
+                Vector3 forward = Vector3.Normalize(position - value);
+                Vector3 right = Vector3.Normalize(Vector3.Cross(forward, Vector3.Up));
+                Vector3 up = Vector3.Normalize(Vector3.Cross(right, forward));
 
-                return Matrix.CreatePerspectiveFieldOfView(
-                    fieldOfView, aspectRatio, nearClipPlane, farClipPlane);
+                Matrix test = Matrix.Identity;
+                test.Forward = forward;
+                test.Right = right;
+                test.Up = up;
+                angles.X = -(float)Math.Asin(test.M32);
+                angles.Y = -(float)Math.Asin(test.M13);
             }
         }
 
-        public Camera(GraphicsDevice graphicsDevice)
+        /// <summary>
+        /// Updates camera with input and updates view matrix.
+        /// </summary>
+        /// <param name="gameTime"></param>
+        public override void Update(GameTime gameTime)
         {
-            this.graphicsDevice = graphicsDevice;           
-        }
-
-        public void Update(GameTime gameTime)
-        {
-            bool isTouchingScreen = Mouse.GetState().LeftButton == ButtonState.Pressed;
-            if (isTouchingScreen)
+            if (Enabled)
             {
-                var xPosition = Mouse.GetState().Position.X;
+                double elapsedTime = (double)gameTime.ElapsedGameTime.Ticks / (double)TimeSpan.TicksPerSecond;
+                ProcessInput((float)elapsedTime * 50.0f);
+                UpdateView();
 
-                float xRatio = xPosition / (float)graphicsDevice.Viewport.Width;
-
-                if (xRatio < 1 / 3.0f)
-                {
-                    angle += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                }
-                else if (xRatio < 2 / 3.0f)
-                {
-                    var forwardVector = new Vector3(0, -1, 0);
-
-                    var rotationMatrix = Matrix.CreateRotationZ(angle);
-                    forwardVector = Vector3.Transform(forwardVector, rotationMatrix);
-
-                    const float unitsPerSecond = 3;
-
-                    this.position += forwardVector * unitsPerSecond *
-                        (float)gameTime.ElapsedGameTime.TotalSeconds;
-                }
-                else
-                {
-                    angle -= (float)gameTime.ElapsedGameTime.TotalSeconds;
-                }
+                base.Update(gameTime);
             }
+        }
+
+        private void ProcessInput(float amountOfMovement)
+        {
+            Vector3 moveVector = new Vector3();
+
+            KeyboardState keys = Keyboard.GetState();
+            GamePadState buttons = GamePad.GetState(PlayerIndex.One);
+
+            //if (keys.IsKeyDown(Keys.D))
+            //    moveVector.X += amountOfMovement;
+            //if (keys.IsKeyDown(Keys.A))
+            //    moveVector.X -= amountOfMovement;
+            //if (keys.IsKeyDown(Keys.S))
+            //    moveVector.Z += amountOfMovement;
+            //if (keys.IsKeyDown(Keys.W))
+            //    moveVector.Z -= amountOfMovement;
+
+            //moveVector.Z += (buttons.DPad.Down == ButtonState.Pressed) ? amountOfMovement : 0.0f;
+            //moveVector.X -= (buttons.DPad.Left == ButtonState.Pressed) ? amountOfMovement : 0.0f;
+            //moveVector.Z -= (buttons.DPad.Up == ButtonState.Pressed) ? amountOfMovement : 0.0f;
+            //moveVector.X += (buttons.DPad.Right == ButtonState.Pressed) ? amountOfMovement : 0.0f;
+
+            angles.Y -= buttons.ThumbSticks.Right.X * amountOfMovement * 0.05f;
+            angles.X += buttons.ThumbSticks.Right.Y * amountOfMovement * 0.05f;
+
+            Matrix cameraRotation = Matrix.CreateRotationX(angles.X) * Matrix.CreateRotationY(angles.Y);
+            position += Vector3.Transform(moveVector, cameraRotation);
+
+            MouseState currentMouseState = Mouse.GetState();
+
+            if (currentMouseState.RightButton == ButtonState.Pressed && prevMouseState.RightButton == ButtonState.Released)
+            {
+                Mouse.SetPosition(widthOver2, heightOver2);
+            }
+            else if (currentMouseState.RightButton == ButtonState.Pressed)
+            {
+                if (currentMouseState.X != widthOver2)
+                    angles.Y -= amountOfMovement / 80.0f * (currentMouseState.X - widthOver2);
+                if (currentMouseState.Y != heightOver2)
+                    angles.X -= amountOfMovement / 80.0f * (currentMouseState.Y - heightOver2);
+
+                Mouse.SetPosition(widthOver2, heightOver2);
+            }
+
+            prevMouseState = currentMouseState;
+
+            if (angles.X > 1.4) angles.X = 1.4f;
+            if (angles.X < -1.4) angles.X = -1.4f;
+            if (angles.Y > Math.PI) angles.Y -= 2 * (float)Math.PI;
+            if (angles.Y < -Math.PI) angles.Y += 2 * (float)Math.PI;
+        }
+
+        private void UpdateProjection()
+        {
+            projection = Matrix.CreatePerspectiveFieldOfView(fieldOfView, aspectRatio, nearPlaneDistance, farPlaneDistance);
+        }
+
+        private void UpdateView()
+        {
+            Matrix cameraRotation = Matrix.CreateRotationX(angles.X) * Matrix.CreateRotationY(angles.Y);
+            Vector3 targetPos = position + Vector3.Transform(Vector3.Forward, cameraRotation);
+
+            Vector3 upVector = Vector3.Transform(Vector3.Up, cameraRotation);
+
+            view = Matrix.CreateLookAt(position, targetPos, upVector);
         }
     }
 }
