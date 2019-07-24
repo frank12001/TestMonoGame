@@ -38,14 +38,8 @@ namespace ConsoleApp1
 
         BasicEffect effect;
 
-        Robot robot;
-    
-   
-
+        Robot robot;       
         Camera camera;
-
-
-
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
