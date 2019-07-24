@@ -9,6 +9,7 @@ using Jitter.Collision;
 using Jitter.Collision.Shapes;
 using Jitter.Dynamics;
 using Jitter.LinearMath;
+using Jitter.Dynamics.Constraints;
 
 namespace ConsoleApp1
 {
@@ -88,7 +89,7 @@ namespace ConsoleApp1
         protected override void Initialize()
         {
             shape1 = new BoxShape(JVector.One);
-            body1 = new RigidBody(shape1) { Tag = "body1", Position = JVector.Left * 5 };
+            body1 = new RigidBody(shape1) { Tag = "body1", Position = JVector.Up * 8 };
             Box1 = new BoxPrimitive(GraphicsDevice);
             world.AddBody(body1);
 
@@ -96,6 +97,9 @@ namespace ConsoleApp1
             body2 = new RigidBody(shape2) { Tag = "body2", Position = JVector.Up*6 };
             Box2 = new BoxPrimitive(GraphicsDevice);
             world.AddBody(body2);
+
+            //var pointConstraint = new PointPointDistance(body2, body1, body2.Position, body1.Position);
+            //world.AddConstraint(pointConstraint);
 
             var scale = 40;
             shape0 = new BoxShape(JVector.One*scale);
