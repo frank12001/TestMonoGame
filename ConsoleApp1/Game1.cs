@@ -20,21 +20,27 @@ namespace ConsoleApp1
         CollisionSystem collision;
         World world;
 
+
         Shape shape1;
         RigidBody body1;
+        BoxPrimitive Box1;
 
         BoxShape shape2;
         RigidBody body2;
+        BoxPrimitive Box2;
+
+        BoxShape shape0;
+        RigidBody body0;
+        BoxPrimitive Box0;
 
         Texture2D checkerboardTexture;
         Texture2D whiteRectangle;
 
-        VertexPositionTexture[] floorVerts;
         BasicEffect effect;
 
         Robot robot;
-        BoxPrimitive Box1;
-        BoxPrimitive Box2;
+    
+   
 
         Camera camera;
 
@@ -78,39 +84,24 @@ namespace ConsoleApp1
         protected override void Initialize()
         {
             shape1 = new BoxShape(JVector.One);
-            body1 = new RigidBody(shape1) { Tag = "body1", Position = JVector.Zero, IsStatic = true };            
+            body1 = new RigidBody(shape1) { Tag = "body1", Position = JVector.Left * 5 };
+            Box1 = new BoxPrimitive(GraphicsDevice);
             world.AddBody(body1);
 
             shape2 = new BoxShape(JVector.One);
             body2 = new RigidBody(shape2) { Tag = "body2", Position = JVector.Up*6 };
+            Box2 = new BoxPrimitive(GraphicsDevice);
             world.AddBody(body2);
 
-
-            floorVerts = new VertexPositionTexture[6];
-            floorVerts[0].Position = new Vector3(-20, -20, 0);
-            floorVerts[1].Position = new Vector3(-20, 20, 0);
-            floorVerts[2].Position = new Vector3(20, -20, 0);
-            floorVerts[3].Position = floorVerts[1].Position;
-            floorVerts[4].Position = new Vector3(20, 20, 0);
-            floorVerts[5].Position = floorVerts[2].Position;            
-
-            int repetitions = 20;
-
-            floorVerts[0].TextureCoordinate = new Vector2(0, 0);
-            floorVerts[1].TextureCoordinate = new Vector2(0, repetitions);
-            floorVerts[2].TextureCoordinate = new Vector2(repetitions, 0);
-
-            floorVerts[3].TextureCoordinate = floorVerts[1].TextureCoordinate;
-            floorVerts[4].TextureCoordinate = new Vector2(repetitions, repetitions);
-            floorVerts[5].TextureCoordinate = floorVerts[2].TextureCoordinate;
+            var scale = 40;
+            shape0 = new BoxShape(JVector.One*scale);
+            body0 = new RigidBody(shape0) { Tag = "body0", Position = JVector.Down*(scale/2),IsStatic = true };
+            Box0 = new BoxPrimitive(GraphicsDevice,scale);
+            world.AddBody(body0);
 
             robot = new Robot();
             robot.Initialize(Content);
-
-            Box1 = new BoxPrimitive(GraphicsDevice);
-
-            Box2 = new BoxPrimitive(GraphicsDevice);
-
+              
             effect = new BasicEffect(graphics.GraphicsDevice);
             camera = new Camera(graphics.GraphicsDevice);
 
@@ -143,37 +134,32 @@ namespace ConsoleApp1
         {
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                //Box1.Position = (Vector3.Up * 6) + (Vector3.Forward * 6);             
+                //在 JV 中一個物體太久沒動 IsActive 會設為 false
+                body2.IsActive = true;
+                body2.Position = JVector.Up * 6;        
             }
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
-                //Box1.Position = (Vector3.Up * 6) + (Vector3.Left * 6);
+                body2.IsActive = true;
+                body2.Position = (JVector.Up * 6) + (JVector.Left * 6);
             }
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
-                //Box1.Position = (Vector3.Up * 6) + (Vector3.Right * 6);
+                body2.IsActive = true;
+                body2.Position = (JVector.Up * 6) + (JVector.Right * 6);
             }
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                //Vector3 v = Vector3.Up * 6;
-                //body2.Position = new JVector(v.X, v.Y, v.Z);
-                //body1.AddForce(JVector.Up * 100);               
-                //Box1.Position = Vector3.Up * 6;
-            }
-            if (Keyboard.GetState().IsKeyUp(Keys.S))
-            {
-                
+                body2.IsActive = true;
+                body2.Position = (JVector.Up * 6) + (JVector.Backward * 6);
             }
             //if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             //    Exit();
             world.Step((float)gameTime.ElapsedGameTime.TotalSeconds, false);
 
-            //Box1.Position = Conversion.ToXNAVector(body1.Position);
-            //Box2.Position = Conversion.ToXNAVector(body2.Position);
             Box1.AddWorldMatrix(Matrix.CreateTranslation(Conversion.ToXNAVector(body1.Position)));
             Box2.AddWorldMatrix(Matrix.CreateTranslation(Conversion.ToXNAVector(body2.Position)));
-
-            //Console.WriteLine(body2.position);
+            Box0.AddWorldMatrix(Matrix.CreateTranslation(Conversion.ToXNAVector(body0.Position)));
 
             robot.Update(gameTime);
             camera.Update(gameTime);
@@ -184,49 +170,34 @@ namespace ConsoleApp1
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             robot.Draw(camera);
-            //Box1.Draw(camera,GraphicsDevice);
-            BasicEffect box3Effect = new BasicEffect(GraphicsDevice);
-            box3Effect.View = camera.ViewMatrix;
-            box3Effect.Projection = camera.ProjectionMatrix;
+
+            BasicEffect myBoxEffect = new BasicEffect(GraphicsDevice);
+            myBoxEffect.EnableDefaultLighting();
+            myBoxEffect.PreferPerPixelLighting = true;
+            myBoxEffect.View = camera.ViewMatrix;
+            myBoxEffect.Projection = camera.ProjectionMatrix;
             var texture2D = new Texture2D(GraphicsDevice, 1, 1);
             texture2D.SetData(new[] { Color.White });
-            box3Effect.Texture = texture2D;
-            box3Effect.TextureEnabled = true;
-            Box1.Draw(box3Effect);
-            texture2D.SetData(new[] { Color.Red });
-            box3Effect.Texture = texture2D;
-            box3Effect.TextureEnabled = true;
-            Box2.Draw(box3Effect);
+            myBoxEffect.Texture = texture2D;
+            myBoxEffect.TextureEnabled = true;
+            Box1.Draw(myBoxEffect);
 
+            texture2D.SetData(new[] { Color.Red });
+            myBoxEffect.Texture = texture2D;
+            myBoxEffect.TextureEnabled = true;
+            Box2.Draw(myBoxEffect);
+
+            texture2D.SetData(new[] { Color.Green });
+            myBoxEffect.Texture = texture2D;
+            myBoxEffect.TextureEnabled = true;
+            Box0.Draw(myBoxEffect);
 
             //spriteBatch.Begin();
             //spriteBatch.Draw(whiteRectangle, new Rectangle(10, 20, 80, 30), Color.Chocolate);
             //spriteBatch.End();
 
-            //DrawGround();
-
             base.Draw(gameTime);
         }
 
-        void DrawGround()
-        {
-            // New camera code
-            effect.View = camera.ViewMatrix;
-            effect.Projection = camera.ProjectionMatrix;
-
-            effect.TextureEnabled = true;
-            effect.Texture = checkerboardTexture;
-
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-
-                graphics.GraphicsDevice.DrawUserPrimitives(
-                            PrimitiveType.TriangleList,
-                    floorVerts,
-                    0,
-                    2);
-            }
-        }
     }
 }

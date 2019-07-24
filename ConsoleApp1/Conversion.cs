@@ -8,9 +8,13 @@ namespace ConsoleApp1
 {
     public sealed class Conversion
     {
-        public static JVector ToJitterVector(Vector3 vector)
+        public static Vector3 ToXNAVector(JVector vector)
         {
-            return new JVector(vector.X, vector.Y, vector.Z);
+            //往前是 y++
+            //往左是 x++
+            //往上是 z++
+            //將他轉成一般 3D 的座標
+            return new Vector3(vector.X, vector.Z, vector.Y);
         }
 
         public static Matrix ToXNAMatrix(JMatrix matrix)
@@ -46,18 +50,8 @@ namespace ConsoleApp1
         }
 
 
-        public static Vector3 ToXNAVector(JVector vector)
-        {
-            return new Vector3(vector.X, vector.Y, vector.Z);
-        }
 
-        //private static Vector3 ConvertPosition(Vector3 vector)
-        //{
-        //    //往前是 y++
-        //    //往左是 x++
-        //    //往上是 z++
-        //    //將他轉成一般 3D 的座標
-        //    return new Vector3(vector.X * -1, vector.Z, vector.Y);
-        //}
+
+
     }
 }
